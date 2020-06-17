@@ -34,7 +34,7 @@ namespace Maroto1P2WebAPI.Controllers
             ISecureDataFormat<AuthenticationTicket> accessTokenFormat)
         {
             UserManager = userManager;
-            AccessTokenFormat = accessTokenFormat;
+            SetAccessTokenFormat(accessTokenFormat);
         }
 
         public ApplicationUserManager UserManager
@@ -49,7 +49,17 @@ namespace Maroto1P2WebAPI.Controllers
             }
         }
 
-        public ISecureDataFormat<AuthenticationTicket> AccessTokenFormat { get; private set; }
+        private ISecureDataFormat<AuthenticationTicket> accessTokenFormat;
+
+        public ISecureDataFormat<AuthenticationTicket> GetAccessTokenFormat()
+        {
+            return accessTokenFormat;
+        }
+
+        private void SetAccessTokenFormat(ISecureDataFormat<AuthenticationTicket> value)
+        {
+            accessTokenFormat = value;
+        }
 
         // GET api/Account/UserInfo
         [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
@@ -65,7 +75,15 @@ namespace Maroto1P2WebAPI.Controllers
                 LoginProvider = externalLogin != null ? externalLogin.LoginProvider : null
             };
         }
+        public ISecureDataFormat<AuthenticationTicket> AccessTokenFormat { get; private set; }
 
+        // GET api/Account/UserId
+        [HostAuthentication(DefaultAuthenticationTypes.ExternalBearer)]
+        [Route("UserId")]
+        public string GetUserId()
+        {
+            return RequestContext.Principal.Identity.GetUserId();
+        }
         // POST api/Account/Logout
         [Route("Logout")]
         public IHttpActionResult Logout()
@@ -164,7 +182,7 @@ namespace Maroto1P2WebAPI.Controllers
 
             Authentication.SignOut(DefaultAuthenticationTypes.ExternalCookie);
 
-            AuthenticationTicket ticket = AccessTokenFormat.Unprotect(model.ExternalAccessToken);
+            AuthenticationTicket ticket = GetAccessTokenFormat().Unprotect(model.ExternalAccessToken);
 
             if (ticket == null || ticket.Identity == null || (ticket.Properties != null
                 && ticket.Properties.ExpiresUtc.HasValue
